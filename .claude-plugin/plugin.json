@@ -1,0 +1,6 @@
+{
+  "name": "usage-bar",
+  "version": "0.2.0",
+  "description": "A line above the prompt showing usage of the 5h limit, the context window and the room before auto-compact, plus the current git branch",
+  "author": { "name": "Jakub Ligęza" }
+}

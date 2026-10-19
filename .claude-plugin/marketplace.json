@@ -1,0 +1,6 @@
+{
+  "name": "usage-bar",
+  "owner": { "name": "Jakub Ligęza" },
+  "description": "Usage line for Claude Code: 5h limit, context window and auto-compact room",
+  "plugins": [{ "name": "usage-bar", "source": "./", "description": "A line above the prompt showing usage of the 5h limit, the context window and the room before auto-compact, plus the current git branch" }]
+}
