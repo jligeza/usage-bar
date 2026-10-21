@@ -164,8 +164,9 @@ export const register: Register = on => {
     // Another plugin may draw into this band too (crew): keep its tree, above this line.
     const above = await next(e)
 
+    // No width on a Box around the engine's own tree: the engine refuses that.
     return (
-      <Box flexDirection="column" width="100%">
+      <Box flexDirection="column">
       {above}
       <Box alignItems="center" width="100%">
         <Box gap={3} flexShrink={0}>
