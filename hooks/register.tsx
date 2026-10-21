@@ -161,7 +161,12 @@ export const register: Register = on => {
         .finally(() => update($, compacting, () => false))
     }
 
+    // Another plugin may draw into this band too (crew): keep its tree, above this line.
+    const above = await next(e)
+
     return (
+      <Box flexDirection="column" width="100%">
+      {above}
       <Box alignItems="center" width="100%">
         <Box gap={3} flexShrink={0}>
           {fiveHour !== null && (
@@ -190,6 +195,7 @@ export const register: Register = on => {
             </Text>
           </Box>
         )}
+      </Box>
       </Box>
     )
   })
