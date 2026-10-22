@@ -11,6 +11,11 @@ const threshold = atom({ plugin: 'usage-bar', key: 'threshold' } as const, null 
 const branch = atom({ plugin: 'usage-bar', key: 'branch' } as const, '' as string | null)
 // True from a Compact press until /compact finishes.
 const compacting = atom({ plugin: 'usage-bar', key: 'compacting' } as const, false)
+// When the main thread's last API request started, in $.clock.now() milliseconds; null before the first.
+const lastRequest = atom({ plugin: 'usage-bar', key: 'lastRequest' } as const, null as number | null)
+
+// Each request renews the prompt cache for this long.
+const cacheTtlMs = 60 * 60_000
 
 // Commands that can move the auto-compact threshold or the token count.
 const usageCommands = new Set(['autocompact', 'model', 'compact', 'clear'])
@@ -99,8 +104,20 @@ export const register: Register = on => {
     await refreshThreshold($)
     await refreshBranch($)
     await refreshUtcOffset($)
+    // Redraws the cache countdown while the session is idle; a reload runs this again with the old timer gone.
+    $.clock.every(60_000, () => update($, tick, n => n + 1))
 
     return next(e)
+  })
+
+  // A subagent's requests run on a cache of their own: only the main thread's renew this one.
+  on('turn.step', async function* ($, e, next) {
+    if (e.agentId === undefined) {
+      const now = await $.clock.now()
+      await update($, lastRequest, () => now)
+    }
+
+    return yield* next(e)
   })
 
   on('command.run', async ($, e, next) => {
@@ -145,6 +162,10 @@ export const register: Register = on => {
       await read($, utcOffset),
     )
     const isCompacting = await read($, compacting)
+    // VS Code shows a countdown of its own.
+    const requestedAt = e.surface === 'desktop' ? await read($, lastRequest) : null
+    const offset = await read($, utcOffset)
+    const cacheLeftMs = requestedAt === null ? 0 : requestedAt + cacheTtlMs - (await $.clock.now())
     // Runs /compact as if typed: $.session.compact is not available in an SDK session such as the VS Code panel.
     const startCompaction = async () => {
       await update($, compacting, () => true)
@@ -188,6 +209,16 @@ export const register: Register = on => {
             )}
             <Text color={blueToRed(compact)}>{`${kilo(compactLeft)} left`}</Text>
           </Box>
+          {requestedAt !== null &&
+            (cacheLeftMs > 0 ? (
+              <Text color={greenToRed(clamp(100 - (cacheLeftMs / cacheTtlMs) * 100))}>
+                {offset === null
+                  ? `Cache ${Math.floor(cacheLeftMs / 60_000)}m`
+                  : `Cache ${Math.floor(cacheLeftMs / 60_000)}m @ ${clockTime(requestedAt + cacheTtlMs, offset)}`}
+              </Text>
+            ) : (
+              <Text dimColor>Cache expired</Text>
+            ))}
         </Box>
         {branchName !== '' && (
           <Box flexGrow={1} flexShrink={1} minWidth={0} justifyContent="flex-end" marginLeft={3}>

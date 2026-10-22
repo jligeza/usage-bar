@@ -8,6 +8,6 @@ export type Usage = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'usage-bar': { tick: number; threshold: number | null; branch: string | null; compacting: boolean; utcOffset: number | null }
+    'usage-bar': { tick: number; threshold: number | null; branch: string | null; compacting: boolean; utcOffset: number | null; lastRequest: number | null }
   }
 }
